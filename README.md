@@ -1,11 +1,11 @@
 # ui5_upload
 
-ui5_upload is node module to easily update a SAPUI5 repository module.
+ui5_upload is node module to easily update a SAPUI5 repository.
 
 It work this way :
 1. The source folder is zipped
-2. The zip file is sent to SAP in a temporary folder
-3. Then the standard function module "/UI5/UI5_REPOSITORY_LOAD_HTTP" is called to update the repository
+2. The zip file is sent to SAP in a temporary folder to a specific SICF node
+3. Then the standard function module /UI5/UI5_REPOSITORY_LOAD_HTTP is called to update the repository
 
 ### Installation
 
@@ -20,7 +20,7 @@ npm install https://github.com/abaticle/ui5_upload.git
 
     [NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg](ui5_upload/NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg)
 
-3. Create a SICF node to handle this class
+3. Create a SICF node to handle this class. Remember this node url, as you will need it later.
 
 ### Usage
 
