@@ -14,9 +14,7 @@ var oConfigExample = {
     displayLog: true
 };
 
-
-
-module.export = function(oConfig, fCallback) {
+module.exports = function(oConfig, fCallback) {
 
     var oError;
     var sTmpZipFile = "tmpSource.zip";
@@ -61,8 +59,8 @@ module.export = function(oConfig, fCallback) {
         console.log("Zip folder");
     }
 
-    /*	
-     *	Zip source folder
+    /*  
+     *  Zip source folder
      */
     oZipdir(oConfig.sourceFolder, {
         saveTo: sTmpZipFile
@@ -75,7 +73,7 @@ module.export = function(oConfig, fCallback) {
         }
 
         /*
-         *	Send zipped folder to SAP
+         *  Send zipped folder to SAP
          */
 
         if (oConfig.displayLog) {
@@ -112,13 +110,24 @@ module.export = function(oConfig, fCallback) {
                 url: sUrl
             }, function(oError, oResponse) {
 
-                var aMessages = JSON.parse(oResponse.body);
+                if (oError) {
+                    fCallback(oError, null);
+                    return;
+                }
 
 
-                fCallback(null, aMessages);
+                var oResult = JSON.parse(oResponse.body);
+
+
+                if (oResult.sucess === "E") {
+                    fCallback(new Error("Error during repository update"), oResult);
+                } else {
+                    fCallback(null, oResult);
+                }
+
 
                 if (oConfig.displayLog) {
-                    _.each(aMessages, function(oMessage) {
+                    _.each(oResult.messages, function(oMessage) {
                         console.log(oMessage.message);
                     });
                 }
