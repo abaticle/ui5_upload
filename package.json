@@ -1,0 +1,24 @@
+{
+    "name": "ui5_upload",
+    "version": "1.0.0",
+    "description": "UI5 repository upload",
+    "main": "main.js",
+    "dependencies": {
+        "lodash": "^4.10.0",
+        "request": "^2.71.0",
+        "zip-dir": "^1.0.2"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "SAPUI5",
+        "UI5",
+        "SAP",
+        "Workbench",
+        "transport"
+    ],
+    "author": "Alexandre Baticle",
+    "license": "ISC"
+}
