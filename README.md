@@ -21,7 +21,7 @@ npm install https://github.com/abaticle/ui5_upload.git
 2. On your SAP system a SICF HTTP class need to be created. Use SAPLINK to install the nugget :
 
 
-    [NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg](ui5_upload/NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg)
+    [NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg](NUGG_ZCL_LOAD_UI5_REPOSITORY.nugg)
 
 3. Create a SICF node to handle this class. Remember this node url, as you will need it later.
 
