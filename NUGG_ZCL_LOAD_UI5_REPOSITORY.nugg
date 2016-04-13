@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="ZCL_LOAD_UI5_REPOSITORY">
+ <CLAS CLSNAME="ZCL_LOAD_UI5_REPOSITORY" VERSION="1" LANGU="F" DESCRIPT="Chargement UI5 repository" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 " ZSAPLINK_PLUGIN_MAJOR_VERSION="0 " ZSAPLINK_PLUGIN_MINOR_VERSION="1 " ZSAPLINK_PLUGIN_BUILD_VERSION="0 " ZSAPLINK_PLUGIN_INFO1="ZSAPLINK_CLASS is part of the main ZSAPLINK project --&gt; This plugin found there instead of ZSAPLINK_PLUGINS projects" ZSAPLINK_PLUGIN_INFO2="SAPLINK homepage: https://www.assembla.com/spaces/saplink/wiki" ZSAPLINK_PLUGIN_INFO3="Download from https://www.assembla.com/code/saplink/subversion/nodes" ZSAPLINK_PLUGIN_INFO4="and navigate to:  trunk -&gt; core -&gt; ZSAPLINK -&gt; CLAS -&gt; ZSAPLINK_CLASS.slnk">
+  <implementing CLSNAME="ZCL_LOAD_UI5_REPOSITORY" REFCLSNAME="IF_HTTP_EXTENSION" VERSION="1" EXPOSURE="2" STATE="1" RELTYPE="1" EDITORDER="1 "/>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <interfaceMethod CLSNAME="ZCL_LOAD_UI5_REPOSITORY" CPDNAME="IF_HTTP_EXTENSION~HANDLE_REQUEST">
+   <source>METHOD if_http_extension~handle_request.
+
+  DATA:
+    lv_string      TYPE string,
+    lt_string      TYPE TABLE OF string,
+    lv_subrc       TYPE subrc,
+    lt_message     TYPE string_table,
+    lv_success     TYPE char1,
+    lv_ot          TYPE trkorr,
+    lv_package     TYPE devclass,
+    lv_application TYPE string,
+    lv_code_page   TYPE string,
+    lv_path_info   TYPE string,
+    lv_verb        TYPE string,
+    lv_cdata       TYPE string,
+    lv_len         TYPE i,
+    lv_data        TYPE string,
+    lv_datax       TYPE xstring,
+    lv_filename    TYPE string,
+    lv_json        TYPE string,
+    lo_entity      TYPE REF TO if_http_entity,
+    lv_target      TYPE string,
+    lt_inputparams TYPE tihttpnvp,
+    ls_inputparams TYPE ihttpnvp,
+    lv_type_req    TYPE string,
+    ls_selection   TYPE trwbo_selection,
+    lt_requests    TYPE trwbo_request_headers,
+    ls_requests    TYPE trwbo_request_header,
+    lv_url         TYPE string.
+
+  lv_path_info = server-&gt;request-&gt;get_header_field( name = &apos;~path_info&apos; ).
+  lv_verb      = server-&gt;request-&gt;get_header_field( name = &apos;~request_method&apos; ).
+
+  lv_target = &apos;c:/temp/tmpRepository.zip&apos;.
+
+
+
+  CASE lv_verb.
+    WHEN &apos;OPTIONS&apos;.
+
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Origin&apos; value = &apos;*&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Methods&apos; value = &apos;POST, GET&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Headers&apos; value = &apos;X-Requested-With&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Credentials&apos; value = &apos;true&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Max-Age&apos; value = &apos;1728000&apos; ).
+
+**********************************************************************
+*  GET :
+*    get_ot            -&gt; Get transport order list
+*    update_repository -&gt; Update the sapui5 repository
+*    get_data          -&gt; Get zip content and delete it
+**********************************************************************
+    WHEN &apos;GET&apos;.
+
+      CALL METHOD server-&gt;request-&gt;get_form_fields
+        CHANGING
+          fields = lt_inputparams.
+
+      READ TABLE lt_inputparams
+        INTO ls_inputparams
+        WITH KEY name = &apos;mode&apos;.
+
+      CASE ls_inputparams-value.
+
+**      Get transport order list :
+        WHEN &apos;get_ot&apos;.
+
+          ls_selection-reqstatus = &apos;LDO&apos;.
+
+          CALL FUNCTION &apos;TRINT_SELECT_REQUESTS&apos;
+            EXPORTING
+              iv_username_pattern    = sy-uname
+              is_selection           = ls_selection
+              iv_complete_projects   = &apos;X&apos;
+            IMPORTING
+              et_requests            = lt_requests
+            EXCEPTIONS
+              action_aborted_by_user = 1
+              OTHERS                 = 2.
+
+
+          LOOP AT lt_requests
+            INTO ls_requests
+            WHERE tarsystem IS NOT INITIAL
+            AND   trstatus = &apos;D&apos;
+            AND   trfunction = &apos;K&apos;
+            AND   client = sy-mandt.
+
+            REPLACE ALL OCCURRENCES OF &apos;&quot;&apos; IN ls_requests-as4text WITH &apos;&apos;.
+
+            CONCATENATE lv_json
+              &apos;{ &quot;ot&quot;:&quot;&apos; ls_requests-trkorr
+              &apos;&quot;, &quot;name&quot;:&quot;&apos; ls_requests-as4text &apos;&quot;}&apos;
+              INTO lv_string.
+
+            APPEND lv_string TO lt_string.
+
+          ENDLOOP.
+
+          CLEAR lv_string.
+          CONCATENATE LINES OF lt_string INTO lv_string SEPARATED BY &apos;,&apos;.
+
+          CONCATENATE &apos;[&apos; lv_string &apos;]&apos; INTO lv_json.
+
+          CALL METHOD server-&gt;response-&gt;set_cdata( data = lv_json ).
+
+**      And finaly update the sapui5 repository :
+        WHEN &apos;update_repository&apos;.
+
+
+*         Transport order
+          READ TABLE lt_inputparams
+            INTO ls_inputparams
+            WITH KEY name = &apos;ot&apos;.
+          IF sy-subrc = 0.
+            lv_ot = ls_inputparams-value.
+          ELSE.
+            lv_subrc = 4.
+          ENDIF.
+
+
+*         package
+          READ TABLE lt_inputparams
+            INTO ls_inputparams
+            WITH KEY name = &apos;package&apos;.
+          IF sy-subrc = 0.
+            lv_package = ls_inputparams-value.
+          ELSE.
+            lv_subrc = 4.
+          ENDIF.
+
+
+*         application
+          READ TABLE lt_inputparams
+            INTO ls_inputparams
+            WITH KEY name = &apos;application&apos;.
+          IF sy-subrc = 0.
+            lv_application = ls_inputparams-value.
+          ELSE.
+            lv_subrc = 4.
+          ENDIF.
+
+*         self url &gt; path_info doesn&apos;t work ?
+          READ TABLE lt_inputparams
+            INTO ls_inputparams
+            WITH KEY name = &apos;url&apos;.
+          IF sy-subrc = 0.
+            lv_url = ls_inputparams-value.
+
+            CONCATENATE lv_url &apos;?mode=get_zip&apos;
+              INTO lv_url.
+          ELSE.
+            lv_subrc = 4.
+          ENDIF.
+
+
+*         external code page
+          READ TABLE lt_inputparams
+            INTO ls_inputparams
+            WITH KEY name = &apos;code_page&apos;.
+          IF sy-subrc = 0.
+            lv_code_page = ls_inputparams-value.
+          ELSE.
+            lv_code_page = &apos;UTF-8&apos;.
+          ENDIF.
+
+
+
+          IF lv_subrc = 0.
+
+            CALL FUNCTION &apos;/UI5/UI5_REPOSITORY_LOAD_HTTP&apos;
+              EXPORTING
+                iv_url                     = lv_url
+                iv_sapui5_application_name = lv_application
+*               IV_SAPUI5_APPLICATION_DESC = &apos;&apos;
+                iv_package                 = lv_package
+                iv_workbench_request       = lv_ot
+                iv_external_code_page      = lv_code_page
+              IMPORTING
+                ev_success                 = lv_success
+                ev_log_messages            = lt_message
+              .
+
+
+            LOOP AT lt_message
+              INTO lv_string.
+
+              REPLACE ALL OCCURRENCES OF &apos;&quot;&apos; IN lv_string WITH &apos;&apos;.
+
+              CONCATENATE lv_json
+                &apos;{ &quot;message&quot;:&quot;&apos; lv_string &apos;&quot;}&apos;
+                INTO lv_string.
+
+              APPEND lv_string TO lt_string.
+
+            ENDLOOP.
+
+            CLEAR lv_string.
+            CONCATENATE LINES OF lt_string INTO lv_string SEPARATED BY &apos;,&apos;.
+
+            CONCATENATE &apos;{&apos;
+                &apos;success&apos;: lv_success
+                &apos;messages: [&apos; lv_string &apos;]&apos;
+             &apos;}&apos;
+             INTO lv_json.
+
+
+          ELSE.
+            lv_success = &apos;E&apos;.
+
+            CONCATENATE &apos;{&apos;
+                &apos;success&apos;: lv_success
+                &apos;messages: [&quot;message&quot;:&quot;Error during import. Check you parameters&quot;]&apos;
+             &apos;}&apos;
+             INTO lv_json.
+
+          ENDIF.
+
+          CALL METHOD server-&gt;response-&gt;set_cdata( data = lv_json ).
+
+**      Service used to retrieve zip file
+        WHEN &apos;get_zip&apos;.
+          OPEN DATASET  lv_target FOR INPUT IN BINARY MODE.
+          READ DATASET  lv_target INTO lv_datax.
+          CLOSE DATASET lv_target.
+
+          lv_len = xstrlen( lv_datax ).
+
+          server-&gt;response-&gt;set_data(
+            data   = lv_datax
+            length = lv_len ).
+
+*         Headers : ZIP
+          server-&gt;response-&gt;set_header_field( name = &apos;Content-Type&apos; value = &apos;application/zip&apos; ).
+          server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Origin&apos; value = &apos;*&apos; ).
+          server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Methods&apos; value = &apos;POST, GET&apos; ).
+          server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Headers&apos; value = &apos;X-Requested-With&apos; ).
+          server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Credentials&apos; value = &apos;true&apos; ).
+          server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Max-Age&apos; value = &apos;1728000&apos; ).
+
+      ENDCASE.
+
+
+**********************************************************************
+*   POST :
+*     Get zipped file, and stock it on SAP
+**********************************************************************
+    WHEN &apos;POST&apos;.
+
+      lo_entity = server-&gt;request-&gt;get_multipart( 1 ).
+
+      IF lo_entity IS BOUND.
+
+        lv_filename = lo_entity-&gt;get_header_field( &apos;~content_filename&apos; ).
+
+*       Get file content
+        CALL METHOD lo_entity-&gt;get_data
+          RECEIVING
+            data = lv_datax.
+
+
+*       And write it to temporary folder
+        lv_len = xstrlen( lv_datax ).
+
+        OPEN DATASET lv_target FOR OUTPUT IN BINARY MODE .
+        TRANSFER lv_datax TO lv_target.
+        CLOSE DATASET lv_target.
+
+        IF sy-subrc = 0.
+
+        ELSE.
+
+        ENDIF.
+
+      ENDIF.
+
+      lv_cdata = server-&gt;request-&gt;get_cdata( ).
+
+      lv_cdata = cl_http_utility=&gt;unescape_url(
+                       escaped   = lv_cdata ).
+
+      server-&gt;response-&gt;set_header_field( name = &apos;Content-Type&apos; value = &apos;application/json; charset=utf-8&apos; ).
+
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Origin&apos; value = &apos;*&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Methods&apos; value = &apos;POST, GET&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Headers&apos; value = &apos;X-Requested-With&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Allow-Credentials&apos; value = &apos;true&apos; ).
+      server-&gt;response-&gt;set_header_field( name = &apos;Access-Control-Max-Age&apos; value = &apos;1728000&apos; ).
+
+      CALL METHOD server-&gt;response-&gt;set_cdata( data = &apos;{subrc: 0}&apos; ).
+
+
+    WHEN OTHERS.
+
+      CALL METHOD server-&gt;response-&gt;set_header_field( name = &apos;Allow&apos; value = &apos;GET&apos; ).
+      CALL METHOD server-&gt;response-&gt;set_status( code = &apos;405&apos; reason = &apos;Method not allowed&apos; ).
+
+  ENDCASE.
+
+ENDMETHOD.</source>
+  </interfaceMethod>
+ </CLAS>
+</nugget>
