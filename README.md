@@ -1,10 +1,13 @@
 # ui5_upload
 
-ui5_upload is node module to easily update a SAPUI5 repository.
+ui5_upload is a Node.js module to easily update a SAPUI5 repository.
 
 It work this way :
+
 1. The source folder is zipped
+
 2. The zip file is sent to SAP in a temporary folder to a specific SICF node
+
 3. Then the standard function module /UI5/UI5_REPOSITORY_LOAD_HTTP is called to update the repository
 
 ### Installation
