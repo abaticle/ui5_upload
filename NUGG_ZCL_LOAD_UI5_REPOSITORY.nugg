@@ -212,8 +212,8 @@
             CONCATENATE LINES OF lt_string INTO lv_string SEPARATED BY &apos;,&apos;.
 
             CONCATENATE &apos;{&apos;
-                &apos;success&apos;: lv_success
-                &apos;messages: [&apos; lv_string &apos;]&apos;
+                &apos;&quot;success&quot;: &quot;&apos; lv_success &apos;&quot;,&apos;
+                &apos;&quot;messages&quot;: [&apos; lv_string &apos;]&apos;
              &apos;}&apos;
              INTO lv_json.
 
@@ -222,8 +222,8 @@
             lv_success = &apos;E&apos;.
 
             CONCATENATE &apos;{&apos;
-                &apos;success&apos;: lv_success
-                &apos;messages: [&quot;message&quot;:&quot;Error during import. Check you parameters&quot;]&apos;
+                &apos;&quot;success&quot; : &quot;&apos; lv_success &apos;&quot;,&apos;
+                &apos;&quot;messages&quot;: [&quot;message&quot;:&quot;Error during import. Check you parameters&quot;]&apos;
              &apos;}&apos;
              INTO lv_json.
 

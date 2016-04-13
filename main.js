@@ -54,6 +54,10 @@ module.exports = function(oConfig, fCallback) {
         oConfig.displayLog = false;
     }
 
+    if (!_.has(oConfig, "codePage")) {
+        oConfig.codePage = "UTF-8";
+    }
+
 
     if (oConfig.displayLog) {
         console.log("Zip folder");
